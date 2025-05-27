@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Youtube連続再生システム</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Youtube連続再生システム</h1>
+        
+        <div class="controls">
+            <div class="video-list-section">
+                <h2>動画リスト</h2>
+                <textarea id="videoIds" placeholder="動画IDをJSON配列形式で入力してください&#10;例: [&quot;dQw4w9WgXcQ&quot;, &quot;9bZkp7q19f0&quot;]"></textarea>
+                <button id="loadVideos">動画リストを読み込み</button>
+                <button id="saveToStorage">ローカルストレージに保存</button>
+                <button id="loadFromStorage">ローカルストレージから読み込み</button>
+            </div>
+            
+            <div class="playback-section">
+                <h2>再生設定</h2>
+                <div class="setting-row">
+                    <label for="defaultInterval">デフォルト再生間隔（秒）:</label>
+                    <input type="number" id="defaultInterval" value="10" min="1">
+                </div>
+                
+                <div class="setting-row">
+                    <label for="customIntervals">カスタム再生タイミング（秒、カンマ区切り）:</label>
+                    <input type="text" id="customIntervals" placeholder="例: 10,15,25,40">
+                </div>
+                
+                <div class="playback-controls">
+                    <button id="playBtn">再生開始</button>
+                    <button id="stopBtn">停止</button>
+                    <button id="pauseBtn">一時停止</button>
+                    <button id="resumeBtn">再開</button>
+                </div>
+            </div>
+            
+            <div class="status-section">
+                <h2>再生状況</h2>
+                <div id="currentStatus">待機中</div>
+                <div id="progressInfo"></div>
+                <div class="progress-bar">
+                    <div id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="video-container">
+            <div id="player"></div>
+        </div>
+        
+        <div class="video-info">
+            <h3>動画情報</h3>
+            <div id="videoList"></div>
+        </div>
+    </div>
+    
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="main.js"></script>
+</body>
+</html> 

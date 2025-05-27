@@ -1,0 +1,287 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+h1 {
+    background: linear-gradient(45deg, #FF0000, #CC0000);
+    color: white;
+    text-align: center;
+    padding: 30px;
+    font-size: 2.5em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 30px;
+    padding: 30px;
+    background: #f8f9fa;
+}
+
+.video-list-section,
+.playback-section,
+.status-section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+    border-bottom: 2px solid #FF0000;
+    padding-bottom: 10px;
+}
+
+h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 14px;
+    margin-bottom: 15px;
+    transition: border-color 0.3s ease;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #FF0000;
+}
+
+.setting-row {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+input[type="number"],
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+    outline: none;
+    border-color: #FF0000;
+}
+
+button {
+    background: linear-gradient(45deg, #FF0000, #CC0000);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    background: linear-gradient(45deg, #CC0000, #990000);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.playback-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.playback-controls button {
+    flex: 1;
+    min-width: 80px;
+}
+
+#stopBtn {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+}
+
+#pauseBtn {
+    background: linear-gradient(45deg, #ffc107, #e0a800);
+}
+
+#resumeBtn {
+    background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 15px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#progressFill {
+    height: 100%;
+    background: linear-gradient(45deg, #FF0000, #CC0000);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+#currentStatus {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    border-left: 4px solid #FF0000;
+}
+
+#progressInfo {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.video-container {
+    padding: 30px;
+    text-align: center;
+    background: #f8f9fa;
+}
+
+#player {
+    display: inline-block;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.video-info {
+    padding: 30px;
+    background: white;
+}
+
+#videoList {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.video-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.video-item.current {
+    background: #fff3cd;
+    border-left: 4px solid #FF0000;
+}
+
+.video-item.completed {
+    background: #d4edda;
+    opacity: 0.7;
+}
+
+.video-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.video-timing {
+    font-size: 12px;
+    color: #666;
+}
+
+@media (max-width: 1024px) {
+    .controls {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        margin: 10px;
+        border-radius: 10px;
+    }
+    
+    h1 {
+        font-size: 2em;
+        padding: 20px;
+    }
+    
+    .controls {
+        padding: 20px;
+    }
+    
+    .video-container {
+        padding: 20px;
+    }
+    
+    .playback-controls {
+        flex-direction: column;
+    }
+    
+    .playback-controls button {
+        width: 100%;
+    }
+} 
