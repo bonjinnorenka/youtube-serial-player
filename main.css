@@ -209,11 +209,64 @@ button:disabled {
     background: #f8f9fa;
 }
 
-#player {
-    display: inline-block;
+.dual-player-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.player-wrapper {
+    position: relative;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.player-wrapper.active {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 15px 35px rgba(255, 0, 0, 0.3);
+    border: 3px solid #FF0000;
+}
+
+.player-wrapper.standby {
+    opacity: 0.7;
+    transform: scale(0.98);
+    border: 2px solid #ffc107;
+}
+
+.player-label {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(45deg, #FF0000, #CC0000);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.player-wrapper.active .player-label {
+    background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+
+.player-wrapper.standby .player-label {
+    background: linear-gradient(45deg, #ffc107, #e0a800);
+}
+
+#playerLeft,
+#playerRight {
+    display: inline-block;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .video-info {
@@ -283,6 +336,17 @@ button:disabled {
     
     .video-container {
         padding: 20px;
+    }
+    
+    .dual-player-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .player-wrapper {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
     }
     
     .playback-controls {

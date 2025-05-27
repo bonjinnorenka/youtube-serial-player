@@ -1,6 +1,9 @@
 class YoutubeSerialPlayer {
     constructor() {
-        this.player = null;
+        this.playerLeft = null;
+        this.playerRight = null;
+        this.currentPlayer = null;
+        this.nextPlayer = null;
         this.videoIds = [];
         this.currentVideoIndex = 0;
         this.playIntervals = [];
@@ -12,6 +15,7 @@ class YoutubeSerialPlayer {
         this.progressTimer = null;
         this.isChangingVideo = false;
         this.lastProcessedVideoIndex = -1;
+        this.playersReady = { left: false, right: false };
         
         this.initializeElements();
         this.bindEvents();
@@ -34,7 +38,9 @@ class YoutubeSerialPlayer {
             currentStatus: document.getElementById('currentStatus'),
             progressInfo: document.getElementById('progressInfo'),
             progressFill: document.getElementById('progressFill'),
-            videoList: document.getElementById('videoList')
+            videoList: document.getElementById('videoList'),
+            leftPlayerWrapper: document.getElementById('leftPlayerWrapper'),
+            rightPlayerWrapper: document.getElementById('rightPlayerWrapper')
         };
     }
     
@@ -145,11 +151,12 @@ class YoutubeSerialPlayer {
             const startTime = this.playIntervals[index] || (index * this.defaultInterval);
             const endTime = this.playIntervals[index + 1] || this.maxDuration;
             const duration = endTime - startTime;
+            const playerSide = index % 2 === 0 ? '左' : '右';
             
             html += `
                 <div class="video-item" id="video-item-${index}">
                     <div>
-                        <div class="video-title">動画 ${index + 1}: ${videoId}</div>
+                        <div class="video-title">動画 ${index + 1}: ${videoId} (${playerSide}プレイヤー)</div>
                         <div class="video-timing">
                             開始: ${startTime}秒 | 再生時間: ${duration}秒
                         </div>
@@ -219,11 +226,11 @@ class YoutubeSerialPlayer {
         this.updateStatus('再生準備中...');
         this.updateButtons();
         
-        if (!this.player) {
-            await this.initializePlayer();
+        if (!this.playerLeft || !this.playerRight) {
+            await this.initializePlayers();
         }
         
-        this.playCurrentVideo();
+        this.setupInitialVideos();
         this.startProgressTracking();
     }
     
@@ -240,14 +247,18 @@ class YoutubeSerialPlayer {
             this.progressTimer = null;
         }
         
-        if (this.player) {
-            this.player.stopVideo();
+        if (this.playerLeft) {
+            this.playerLeft.stopVideo();
+        }
+        if (this.playerRight) {
+            this.playerRight.stopVideo();
         }
         
         this.updateStatus('停止しました。');
         this.updateProgress(0, this.maxDuration);
         this.updateButtons();
         this.clearVideoHighlight();
+        this.clearPlayerStates();
     }
     
     pausePlayback() {
@@ -260,8 +271,8 @@ class YoutubeSerialPlayer {
             this.progressTimer = null;
         }
         
-        if (this.player) {
-            this.player.pauseVideo();
+        if (this.currentPlayer) {
+            this.currentPlayer.pauseVideo();
         }
         
         this.updateStatus('一時停止中');
@@ -273,8 +284,8 @@ class YoutubeSerialPlayer {
         
         this.isPaused = false;
         
-        if (this.player) {
-            this.player.playVideo();
+        if (this.currentPlayer) {
+            this.currentPlayer.playVideo();
         }
         
         this.startProgressTracking();
@@ -282,12 +293,22 @@ class YoutubeSerialPlayer {
         this.updateButtons();
     }
     
-    async initializePlayer() {
+    async initializePlayers() {
         return new Promise((resolve) => {
-            this.player = new YT.Player('player', {
-                height: '480',
-                width: '854',
-                videoId: this.videoIds[0],
+            let readyCount = 0;
+            
+            const checkReady = () => {
+                readyCount++;
+                if (readyCount === 2) {
+                    console.log('Both players ready');
+                    resolve();
+                }
+            };
+            
+            this.playerLeft = new YT.Player('playerLeft', {
+                height: '360',
+                width: '640',
+                videoId: this.videoIds[0] || 'dQw4w9WgXcQ',
                 playerVars: {
                     'autoplay': 0,
                     'controls': 1,
@@ -296,40 +317,84 @@ class YoutubeSerialPlayer {
                 },
                 events: {
                     'onReady': () => {
-                        console.log('Player ready');
-                        resolve();
+                        console.log('Left player ready');
+                        this.playersReady.left = true;
+                        checkReady();
                     },
-                    'onStateChange': (event) => this.onPlayerStateChange(event)
+                    'onStateChange': (event) => this.onPlayerStateChange(event, 'left')
+                }
+            });
+            
+            this.playerRight = new YT.Player('playerRight', {
+                height: '360',
+                width: '640',
+                videoId: this.videoIds[1] || 'dQw4w9WgXcQ',
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 1,
+                    'rel': 0,
+                    'showinfo': 0
+                },
+                events: {
+                    'onReady': () => {
+                        console.log('Right player ready');
+                        this.playersReady.right = true;
+                        checkReady();
+                    },
+                    'onStateChange': (event) => this.onPlayerStateChange(event, 'right')
                 }
             });
         });
     }
     
-    onPlayerStateChange(event) {
-        // プレイヤーの状態変化をハンドル
-        console.log('Player state changed:', event.data, 'isChangingVideo:', this.isChangingVideo);
+    setupInitialVideos() {
+        // 最初の動画を左プレイヤーで再生開始
+        this.currentPlayer = this.playerLeft;
+        this.nextPlayer = this.playerRight;
         
-        if (event.data === YT.PlayerState.ENDED && this.isPlaying && !this.isPaused && !this.isChangingVideo && this.currentVideoIndex !== this.lastProcessedVideoIndex) {
-            console.log('Video ended, playing next video');
-            this.isChangingVideo = true; // 動画切り替え中フラグを設定
-            this.lastProcessedVideoIndex = this.currentVideoIndex; // 処理済みインデックスを記録
+        this.playCurrentVideo();
+        
+        // 次の動画があれば右プレイヤーでスタンバイ
+        if (this.currentVideoIndex + 1 < this.videoIds.length) {
+            this.cueNextVideo();
+        }
+        
+        this.updatePlayerStates();
+    }
+    
+    onPlayerStateChange(event, playerSide) {
+        console.log(`Player ${playerSide} state changed:`, event.data, 'isChangingVideo:', this.isChangingVideo);
+        
+        const player = playerSide === 'left' ? this.playerLeft : this.playerRight;
+        
+        if (event.data === YT.PlayerState.ENDED && 
+            this.isPlaying && 
+            !this.isPaused && 
+            !this.isChangingVideo && 
+            player === this.currentPlayer &&
+            this.currentVideoIndex !== this.lastProcessedVideoIndex) {
             
-            // 少し遅延を入れて連続イベントを防ぐ
+            console.log('Video ended, switching to next player');
+            this.isChangingVideo = true;
+            this.lastProcessedVideoIndex = this.currentVideoIndex;
+            
             setTimeout(() => {
                 if (this.isPlaying && !this.isPaused) {
-                    this.playNextVideo();
+                    this.switchToNextVideo();
                 }
             }, 100);
-        } else if (event.data === YT.PlayerState.PLAYING && this.isPlaying && !this.isPaused) {
-            // 動画が再生開始された時の処理
-            this.isChangingVideo = false; // 再生開始時にフラグをリセット
+        } else if (event.data === YT.PlayerState.PLAYING && 
+                   this.isPlaying && 
+                   !this.isPaused && 
+                   player === this.currentPlayer) {
+            
+            this.isChangingVideo = false;
             const currentStartTime = this.playIntervals[this.currentVideoIndex] || 0;
             const nextStartTime = this.playIntervals[this.currentVideoIndex + 1];
             const endTime = nextStartTime !== undefined ? nextStartTime : (currentStartTime + this.defaultInterval);
             
             this.updateStatus(`動画 ${this.currentVideoIndex + 1} を再生中 (${currentStartTime}秒〜${endTime}秒)`);
         }
-        // UNSTARTED状態での処理を削除 - isChangingVideoをリセットしない
     }
     
     playCurrentVideo() {
@@ -349,13 +414,11 @@ class YoutubeSerialPlayer {
             endTime = startTime + this.defaultInterval;
         }
         
-        console.log(`Loading video ${this.currentVideoIndex + 1}: ${videoId} (${startTime}s - ${endTime}s)`);
+        console.log(`Playing video ${this.currentVideoIndex + 1}: ${videoId} (${startTime}s - ${endTime}s) on ${this.currentPlayer === this.playerLeft ? 'left' : 'right'} player`);
         
-        // 動画読み込み開始時にフラグを設定
         this.isChangingVideo = true;
         
-        // loadVideoByIdにstartTimeとendTimeを指定
-        this.player.loadVideoById({
+        this.currentPlayer.loadVideoById({
             videoId: videoId,
             startSeconds: startTime,
             endSeconds: endTime
@@ -365,14 +428,49 @@ class YoutubeSerialPlayer {
         this.highlightCurrentVideo();
     }
     
-    // scheduleNextVideoメソッドは削除 - onPlayerStateChangeでENDED状態を処理
+    cueNextVideo() {
+        const nextIndex = this.currentVideoIndex + 1;
+        if (nextIndex >= this.videoIds.length) return;
+        
+        const videoId = this.videoIds[nextIndex];
+        const startTime = this.playIntervals[nextIndex] || (nextIndex * this.defaultInterval);
+        const nextStartTime = this.playIntervals[nextIndex + 1];
+        
+        let endTime;
+        if (nextStartTime !== undefined) {
+            endTime = nextStartTime;
+        } else {
+            endTime = startTime + this.defaultInterval;
+        }
+        
+        console.log(`Cueing next video ${nextIndex + 1}: ${videoId} (${startTime}s - ${endTime}s) on ${this.nextPlayer === this.playerLeft ? 'left' : 'right'} player`);
+        
+        this.nextPlayer.cueVideoById({
+            videoId: videoId,
+            startSeconds: startTime,
+            endSeconds: endTime
+        });
+    }
     
-    playNextVideo() {
+    switchToNextVideo() {
         this.markVideoCompleted(this.currentVideoIndex);
         this.currentVideoIndex++;
         
         if (this.currentVideoIndex < this.videoIds.length) {
-            this.playCurrentVideo();
+            // プレイヤーを交代
+            [this.currentPlayer, this.nextPlayer] = [this.nextPlayer, this.currentPlayer];
+            
+            // 新しいcurrentPlayerで再生開始
+            this.currentPlayer.playVideo();
+            
+            // 次の動画があれば新しいnextPlayerでスタンバイ
+            if (this.currentVideoIndex + 1 < this.videoIds.length) {
+                this.cueNextVideo();
+            }
+            
+            this.updatePlayerStates();
+            this.highlightCurrentVideo();
+            this.isChangingVideo = false;
         } else {
             this.completePlayback();
         }
@@ -392,6 +490,7 @@ class YoutubeSerialPlayer {
         this.updateProgress(this.maxDuration, this.maxDuration);
         this.updateButtons();
         this.clearVideoHighlight();
+        this.clearPlayerStates();
     }
     
     startProgressTracking() {
@@ -400,10 +499,9 @@ class YoutubeSerialPlayer {
         }
         
         this.progressTimer = setInterval(() => {
-            if (this.isPlaying && !this.isPaused && this.player) {
-                // 現在の動画の開始時間と実際の再生時間から現在時間を計算
+            if (this.isPlaying && !this.isPaused && this.currentPlayer) {
                 const currentStartTime = this.playIntervals[this.currentVideoIndex] || 0;
-                const playerCurrentTime = this.player.getCurrentTime() || 0;
+                const playerCurrentTime = this.currentPlayer.getCurrentTime() || 0;
                 this.currentTime = currentStartTime + (playerCurrentTime - currentStartTime);
                 
                 this.updateProgress(this.currentTime, this.maxDuration);
@@ -413,6 +511,29 @@ class YoutubeSerialPlayer {
                 }
             }
         }, 100);
+    }
+    
+    updatePlayerStates() {
+        // プレイヤーの状態を視覚的に更新
+        this.elements.leftPlayerWrapper.classList.remove('active', 'standby');
+        this.elements.rightPlayerWrapper.classList.remove('active', 'standby');
+        
+        if (this.currentPlayer === this.playerLeft) {
+            this.elements.leftPlayerWrapper.classList.add('active');
+            if (this.currentVideoIndex + 1 < this.videoIds.length) {
+                this.elements.rightPlayerWrapper.classList.add('standby');
+            }
+        } else if (this.currentPlayer === this.playerRight) {
+            this.elements.rightPlayerWrapper.classList.add('active');
+            if (this.currentVideoIndex + 1 < this.videoIds.length) {
+                this.elements.leftPlayerWrapper.classList.add('standby');
+            }
+        }
+    }
+    
+    clearPlayerStates() {
+        this.elements.leftPlayerWrapper.classList.remove('active', 'standby');
+        this.elements.rightPlayerWrapper.classList.remove('active', 'standby');
     }
     
     updateStatus(message) {
