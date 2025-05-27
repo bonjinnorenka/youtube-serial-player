@@ -313,7 +313,10 @@ class YoutubeSerialPlayer {
                     'autoplay': 0,
                     'controls': 1,
                     'rel': 0,
-                    'showinfo': 0
+                    'showinfo': 0,
+                    'playsinline': 1,
+                    'modestbranding': 1,
+                    'enablejsapi': 1
                 },
                 events: {
                     'onReady': () => {
@@ -333,7 +336,10 @@ class YoutubeSerialPlayer {
                     'autoplay': 0,
                     'controls': 1,
                     'rel': 0,
-                    'showinfo': 0
+                    'showinfo': 0,
+                    'playsinline': 1,
+                    'modestbranding': 1,
+                    'enablejsapi': 1
                 },
                 events: {
                     'onReady': () => {
@@ -354,9 +360,11 @@ class YoutubeSerialPlayer {
         
         this.playCurrentVideo();
         
-        // 次の動画があれば右プレイヤーでスタンバイ
+        // 次の動画があれば右プレイヤーでスタンバイ（最初の動画の読み込み完了後に実行）
         if (this.currentVideoIndex + 1 < this.videoIds.length) {
-            this.cueNextVideo();
+            setTimeout(() => {
+                this.cueNextVideo();
+            }, 500); // 最初の動画の読み込みを待つ
         }
         
         this.updatePlayerStates();
@@ -374,15 +382,14 @@ class YoutubeSerialPlayer {
             player === this.currentPlayer &&
             this.currentVideoIndex !== this.lastProcessedVideoIndex) {
             
-            console.log('Video ended, switching to next player');
+            console.log('Video ended, switching to next player immediately');
             this.isChangingVideo = true;
             this.lastProcessedVideoIndex = this.currentVideoIndex;
             
-            setTimeout(() => {
-                if (this.isPlaying && !this.isPaused) {
-                    this.switchToNextVideo();
-                }
-            }, 100);
+            // 遅延なしで即座に切り替え
+            if (this.isPlaying && !this.isPaused) {
+                this.switchToNextVideo();
+            }
         } else if (event.data === YT.PlayerState.PLAYING && 
                    this.isPlaying && 
                    !this.isPaused && 
@@ -394,6 +401,11 @@ class YoutubeSerialPlayer {
             const endTime = nextStartTime !== undefined ? nextStartTime : (currentStartTime + this.defaultInterval);
             
             this.updateStatus(`動画 ${this.currentVideoIndex + 1} を再生中 (${currentStartTime}秒〜${endTime}秒)`);
+        } else if (event.data === YT.PlayerState.CUED && 
+                   player === this.nextPlayer && 
+                   this.isPlaying && 
+                   !this.isPaused) {
+            console.log(`Next video cued successfully on ${playerSide} player`);
         }
     }
     
@@ -460,12 +472,17 @@ class YoutubeSerialPlayer {
             // プレイヤーを交代
             [this.currentPlayer, this.nextPlayer] = [this.nextPlayer, this.currentPlayer];
             
-            // 新しいcurrentPlayerで再生開始
+            // 前のプレイヤーを即座に停止
+            this.nextPlayer.stopVideo();
+            
+            // 新しいcurrentPlayerで即座に再生開始
             this.currentPlayer.playVideo();
             
-            // 次の動画があれば新しいnextPlayerでスタンバイ
+            // 次の動画があれば新しいnextPlayerでスタンバイ（少し遅延を入れて安定性を確保）
             if (this.currentVideoIndex + 1 < this.videoIds.length) {
-                this.cueNextVideo();
+                setTimeout(() => {
+                    this.cueNextVideo();
+                }, 200);
             }
             
             this.updatePlayerStates();
@@ -506,11 +523,24 @@ class YoutubeSerialPlayer {
                 
                 this.updateProgress(this.currentTime, this.maxDuration);
                 
+                // 動画の終了が近づいたら次の動画の準備を確認
+                const nextStartTime = this.playIntervals[this.currentVideoIndex + 1];
+                const endTime = nextStartTime !== undefined ? nextStartTime : (currentStartTime + this.defaultInterval);
+                const timeUntilEnd = endTime - this.currentTime;
+                
+                // 残り1秒になったら次のプレイヤーの準備を確認
+                if (timeUntilEnd <= 1 && timeUntilEnd > 0.5 && this.currentVideoIndex + 1 < this.videoIds.length) {
+                    if (this.nextPlayer && this.nextPlayer.getPlayerState() === YT.PlayerState.CUED) {
+                        // 既にキューされているので準備完了
+                        console.log('Next video is ready for seamless transition');
+                    }
+                }
+                
                 if (this.currentTime >= this.maxDuration) {
                     this.completePlayback();
                 }
             }
-        }, 100);
+        }, 50); // より頻繁にチェックして滑らかな進行を実現
     }
     
     updatePlayerStates() {

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Youtube serial player</title>
+</head>
+<body>
+    <div id="player1"></div>
+    <div id="player2"></div>
+    <!-- <script src="https://www.youtube.com/iframe_api"></script> -->
+    <script src="https://www.youtube.com/s/player/59b252b9/www-widgetapi.vflset/www-widgetapi.js"></script>
+    <script>
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const playlist = ["zkzG6xxEDMQ", "gLLRcFxe9Bo", "jlPBo5qoEU8", "On5gvNPjXGQ", "09z87O1CgIw", "FUru33n0ITs", "M8gLzm9J8yA", "e6U9_Xv2h9A", "Jz3A8fTcE6Q", "u7zUNlavkEw", "xHcHoqBhFz0", "gZeeKlQAzGQ", "ek3PZeXtZbg", "qNIhngowViI", "j_aYrH5Vb3A", "f8Znmwk_MkE", "b4w2H7P0HXk", "RyKeJJcRYX4", "ihREuw5PKs4", "fY1CQ5kSRxY", "f4dJFe4MGcs", "uTO0KnDsVH0", "9RBY7u5qas8", "3y8oIuEkqQs", "PYzTq7YEPBI", "OXAkx5_A9rE", "1UId-1TnC4U", "OR1Epbc_NNE", "N9Gqht8POm4", "mLwtfg57kbs", "LfI8sxSFtuE", "FLsEN1Wzv4U", "rUH6RTrMYdU", "oPAcjv__fbc", "epPS_N1hx0E", "_h82B6AbOVw", "kESJBjFzrtM", "LibTCQAN1m4", "HHhY2w94Ric", "_mNDpIRh3X0", "g76O2TkAAAg", "U4JEWV-xJ4w", "-PtokvnvYiM", "bqGmrZaUe0Y", "nHaOfBSPHjA", "-_9gCnAQzP4", "t1Ny203vUfk", "JLlwR61PgL4", "wQ52l_ZG2Ns", "E1208PT5d6o", "_gAU0nukZAc", "8ec3l429woQ", "4z9tSFu0pB8", "6FgRK1Tn4r8", "7O0Y9UqU3yQ", "zVfrNhGzbQY", "zyJ3Iq3E_CY", "rBnTj-A182U", "pvFhT7jQtvU", "onldyRBXmYs", "yhOS9MhCIkM", "d51Dl135-V4", "N5MoAOGspjk", "n0zMs_HCg5o", "_U5-dEn1n7U", "EpEJlvpP0RU", "XG0_qgIUSFU", "Rpz0V9gQpkA", "v0K8Qbv1cek", "IKxb0FAXxtI", "qA_WcSg-qmY", "1JcXPIm5M_A", "r86ZsDvXS90", "GA934WTQwb8", "iztIcaq9QBA", "OXpTBiQoSPg", "phjWw9mdQyg", "zSWByrPGXcE", "I3a_lKhA67A", "6ylJ_P3E7b4", "7KIG6smbczA", "-6JYcjDjzuo", "uAN0RhnPz_o"]
+        const startTime = [0,19,25,31,38,47,57,64]
+        let currentIndex = 0;
+        const player1 = new YT.Player('player1', {
+            height: '360',
+            width: '640',
+            videoId: playlist[0],
+            startSeconds: startTime[0]
+        });
+        const player2 = new YT.Player('player2', {
+            height: '360',
+            width: '640',
+            videoId: playlist[1],
+            startSeconds: startTime[1]
+        });
+        
+       (async () => {
+            await wait(5000);
+            console.log("start");
+            for (let i = 0; i < playlist.length; i++) {
+                if (currentIndex % 2 === 0) {
+                    player1.stopVideo();
+                    player2.playVideo();
+                } else {
+                    player2.stopVideo();
+                    player1.playVideo();
+                }
+                await wait((startTime[i] - startTime[i-1])*1000);
+                playNextVideo();
+            }
+       })();
+
+
+       const playNextVideo = async () => {
+            currentIndex++;
+            if (currentIndex < playlist.length) {
+                const nextVideoId = playlist[currentIndex];
+                const nextStartTime = startTime[currentIndex];
+                if (currentIndex % 2 === 0) {
+                    player1.cueVideoById({
+                        videoId: nextVideoId,
+                        startSeconds: nextStartTime
+                    });   
+                } else {
+                    player2.cueVideoById({
+                        videoId: nextVideoId,
+                        startSeconds: nextStartTime
+                    });
+                }
+            }
+       }
+    </script>
+</body>
+</html>
