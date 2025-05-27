@@ -24,6 +24,7 @@ class YoutubeSerialPlayer {
             defaultInterval: document.getElementById('defaultInterval'),
             customIntervals: document.getElementById('customIntervals'),
             loadVideos: document.getElementById('loadVideos'),
+            shuffleVideos: document.getElementById('shuffleVideos'),
             saveToStorage: document.getElementById('saveToStorage'),
             loadFromStorage: document.getElementById('loadFromStorage'),
             playBtn: document.getElementById('playBtn'),
@@ -39,6 +40,7 @@ class YoutubeSerialPlayer {
     
     bindEvents() {
         this.elements.loadVideos.addEventListener('click', () => this.loadVideoIds());
+        this.elements.shuffleVideos.addEventListener('click', () => this.shuffleVideoList());
         this.elements.saveToStorage.addEventListener('click', () => this.saveToStorage());
         this.elements.loadFromStorage.addEventListener('click', () => this.loadFromStorage());
         this.elements.playBtn.addEventListener('click', () => this.startPlayback());
@@ -67,10 +69,43 @@ class YoutubeSerialPlayer {
             this.setupPlayIntervals();
             this.displayVideoList();
             this.updateStatus('動画リストが読み込まれました。');
+            this.updateButtons();
             
         } catch (error) {
             alert('動画IDリストの形式が正しくありません。JSON配列形式で入力してください。\n例: ["dQw4w9WgXcQ", "9bZkp7q19f0"]');
         }
+    }
+    
+    shuffleVideoList() {
+        if (this.videoIds.length === 0) {
+            alert('まず動画リストを読み込んでください。');
+            return;
+        }
+        
+        if (this.isPlaying) {
+            alert('再生中はシャッフルできません。停止してから実行してください。');
+            return;
+        }
+        
+        // Fisher-Yatesアルゴリズムでシャッフル
+        const shuffled = [...this.videoIds];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        
+        this.videoIds = shuffled;
+        
+        // テキストエリアの内容も更新
+        this.elements.videoIds.value = JSON.stringify(this.videoIds);
+        
+        // 再生間隔を再設定
+        this.setupPlayIntervals();
+        
+        // 動画リスト表示を更新
+        this.displayVideoList();
+        
+        this.updateStatus('動画リストがシャッフルされました。');
     }
     
     setupPlayIntervals() {
@@ -160,6 +195,7 @@ class YoutubeSerialPlayer {
             if (this.videoIds.length > 0) {
                 this.setupPlayIntervals();
                 this.displayVideoList();
+                this.updateButtons();
             }
             
             this.updateStatus('ローカルストレージから読み込まれました。');
@@ -395,6 +431,7 @@ class YoutubeSerialPlayer {
         this.elements.stopBtn.disabled = !this.isPlaying;
         this.elements.pauseBtn.disabled = !this.isPlaying || this.isPaused;
         this.elements.resumeBtn.disabled = !this.isPlaying || !this.isPaused;
+        this.elements.shuffleVideos.disabled = this.isPlaying || this.videoIds.length === 0;
     }
     
     highlightCurrentVideo() {

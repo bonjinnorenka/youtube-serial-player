@@ -160,6 +160,14 @@ button:disabled {
     background: linear-gradient(45deg, #28a745, #1e7e34);
 }
 
+#shuffleVideos {
+    background: linear-gradient(45deg, #6f42c1, #5a32a3);
+}
+
+#shuffleVideos:hover {
+    background: linear-gradient(45deg, #5a32a3, #4c2a85);
+}
+
 .progress-bar {
     width: 100%;
     height: 20px;
